@@ -657,8 +657,12 @@ function renderResult(d) {
     document.getElementById('confBar').style.width = conf + '%';
   }, 50);
 
-  document.getElementById('signalUsed').textContent = (d.signal_used || '—').replace(/_/g, ' ');
-  document.getElementById('ruleTriggered').textContent = d.rule_triggered || 'none';
+  // 'source' and 'reason' are the original notebook key names
+  // server also sends 'signal_used' / 'rule_triggered' as aliases — read whichever exists
+  const source = d.source || d.signal_used || '—';
+  const reason = d.reason || d.rule_triggered || 'none';
+  document.getElementById('signalUsed').textContent = source.replace(/_/g, ' ');
+  document.getElementById('ruleTriggered').textContent = reason;
 
   // URL analysis
   const ua = d.url_analysis || {};
@@ -679,10 +683,10 @@ function renderResult(d) {
     urlBox.style.display = 'none';
   }
 
-  // class probabilities
+  // 'all_probs' is the original notebook key name; 'class_probabilities' is the alias
+  const probs = d.all_probs || d.class_probabilities || {};
   const container = document.getElementById('probsContainer');
   container.innerHTML = '';
-  const probs = d.class_probabilities || {};
   const sorted = Object.entries(probs).sort((a,b) => b[1] - a[1]);
   const topClass = sorted[0]?.[0];
   sorted.forEach(([cls, pct]) => {
