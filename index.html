@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FraudShield v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #060b14;
+    --surface:   #0d1626;
+    --surface2:  #111d30;
+    --border:    rgba(34,211,238,0.15);
+    --cyan:      #22d3ee;
+    --cyan-dim:  rgba(34,211,238,0.12);
+    --red:       #f87171;
+    --red-dim:   rgba(248,113,113,0.12);
+    --amber:     #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --green:     #34d399;
+    --green-dim: rgba(52,211,153,0.12);
+    --muted:     #475569;
+    --text:      #e2e8f0;
+    --text-dim:  #94a3b8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ── header ── */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .shield-icon {
+    width: 42px;
+    height: 42px;
+    color: var(--cyan);
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(22px, 5vw, 32px);
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  h1 span { color: var(--cyan); }
+
+  .tagline {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── config panel ── */
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+
+  .config-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .endpoint-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  #endpointInput {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--cyan);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #endpointInput:focus { border-color: var(--cyan); }
+  #endpointInput::placeholder { color: var(--muted); font-size: 12px; }
+
+  .btn-connect {
+    background: var(--cyan);
+    color: #060b14;
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn-connect:hover { opacity: 0.88; }
+  .btn-connect:active { transform: scale(0.97); }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 6px;
+    transition: background 0.3s;
+  }
+
+  .status-dot.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.err { background: var(--red); }
+
+  .status-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* ── input area ── */
+  .input-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+
+  textarea#msgInput {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 110px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea#msgInput:focus { border-color: rgba(34,211,238,0.4); }
+  textarea#msgInput::placeholder { color: var(--muted); }
+
+  .action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .sample-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .sample-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .pill:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .btn-analyze {
+    background: linear-gradient(135deg, var(--cyan), #0ea5e9);
+    color: #060b14;
+    border: none;
+    border-radius: 9px;
+    padding: 11px 28px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 20px rgba(34,211,238,0.2);
+  }
+
+  .btn-analyze:hover { opacity: 0.9; box-shadow: 0 0 28px rgba(34,211,238,0.35); }
+  .btn-analyze:active { transform: scale(0.97); }
+  .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── loading spinner ── */
+  .spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── result card ── */
+  .result-card {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .verdict-banner {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .verdict-icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .verdict-label {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .verdict-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .verdict-SCAM             { background: var(--red-dim);   border-left: 4px solid var(--red);   }
+  .verdict-SUSPICIOUS_HIGH_RISK { background: rgba(251,113,36,0.1); border-left: 4px solid #fb923c; }
+  .verdict-SUSPICIOUS       { background: var(--amber-dim); border-left: 4px solid var(--amber); }
+  .verdict-LIKELY_SAFE      { background: var(--green-dim); border-left: 4px solid var(--green); }
+  .verdict-SAFE             { background: var(--green-dim); border-left: 4px solid var(--green); }
+
+  .verdict-color-SCAM               { color: var(--red); }
+  .verdict-color-SUSPICIOUS_HIGH_RISK{ color: #fb923c; }
+  .verdict-color-SUSPICIOUS          { color: var(--amber); }
+  .verdict-color-LIKELY_SAFE         { color: var(--green); }
+  .verdict-color-SAFE                { color: var(--green); }
+
+  /* ── detail grid ── */
+  .details {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 520px) { .details { grid-template-columns: 1fr; } }
+
+  .detail-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .detail-box.full { grid-column: 1 / -1; }
+
+  .detail-key {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .detail-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .conf-bar-wrap {
+    background: var(--surface);
+    border-radius: 4px;
+    height: 6px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .conf-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--cyan), #0ea5e9);
+    transition: width 0.6s cubic-bezier(.22,1,.36,1);
+  }
+
+  /* ── class probs ── */
+  .probs-section {
+    padding: 0 24px 22px;
+  }
+
+  .probs-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .prob-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .prob-name {
+    width: 180px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+
+  .prob-track {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 3px;
+    height: 5px;
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--cyan);
+    transition: width 0.5s ease;
+  }
+
+  .prob-fill.highlight { background: linear-gradient(90deg, var(--cyan), #38bdf8); }
+
+  .prob-pct {
+    width: 42px;
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ── url flags ── */
+  .flag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .flag-chip {
+    background: var(--red-dim);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--red);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ── error ── */
+  .error-box {
+    display: none;
+    background: var(--red-dim);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--red);
+    font-size: 13px;
+  }
+
+  /* ── footer ── */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  footer a { color: var(--text-dim); text-decoration: none; }
+  footer a:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25z
+             M9 12.75l2.25 2.25 4.5-4.5"/>
+      </svg>
+      <h1>Fraud<span>Shield</span> <span style="font-size:16px;color:var(--muted)">v3</span></h1>
+    </div>
+    <p class="tagline">10-class fraud detection · transformer + rule engine + URL analysis</p>
+  </header>
+
+  <!-- config -->
+  <div class="config-panel">
+    <div class="config-label">Server Endpoint</div>
+    <div class="endpoint-row">
+      <input id="endpointInput" type="text"
+        placeholder="https://xxxx-xxxx.trycloudflare.com  (paste from Colab)" />
+      <button class="btn-connect" onclick="testConnection()">Connect</button>
+    </div>
+    <div class="status-text">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Paste your Colab endpoint and click Connect</span>
+    </div>
+  </div>
+
+  <!-- input -->
+  <div class="input-panel">
+    <div class="config-label">Message to Analyse</div>
+    <textarea id="msgInput" placeholder="Paste an SMS, WhatsApp message, or email text here…"></textarea>
+    <div class="action-row">
+      <div>
+        <div class="sample-label" style="margin-bottom:5px;">Try a sample:</div>
+        <div class="sample-pills">
+          <span class="pill" onclick="loadSample('kyc')">KYC scam</span>
+          <span class="pill" onclick="loadSample('delivery')">Delivery fraud</span>
+          <span class="pill" onclick="loadSample('investment')">Investment scam</span>
+          <span class="pill" onclick="loadSample('benign')">Benign SMS</span>
+        </div>
+      </div>
+      <button class="btn-analyze" id="analyzeBtn" onclick="analyse()" disabled>Analyse →</button>
+    </div>
+  </div>
+
+  <div class="spinner" id="spinner"></div>
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- result -->
+  <div class="result-card" id="resultCard">
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div>
+        <div class="verdict-label" id="verdictLabel"></div>
+        <div class="verdict-sub" id="verdictSub"></div>
+      </div>
+    </div>
+    <div class="details">
+      <div class="detail-box">
+        <div class="detail-key">Attack Type</div>
+        <div class="detail-val" id="attackType"></div>
+      </div>
+      <div class="detail-box">
+        <div class="detail-key">Confidence</div>
+        <div class="detail-val" id="confValue"></div>
+        <div class="conf-bar-wrap"><div class="conf-bar" id="confBar" style="width:0%"></div></div>
+      </div>
+      <div class="detail-box">
+        <div class="detail-key">Signal Used</div>
+        <div class="detail-val" id="signalUsed"></div>
+      </div>
+      <div class="detail-box">
+        <div class="detail-key">Rule Triggered</div>
+        <div class="detail-val" id="ruleTriggered" style="font-size:11px;word-break:break-all;"></div>
+      </div>
+      <div class="detail-box full" id="urlBox">
+        <div class="detail-key">URL Analysis</div>
+        <div class="detail-val" id="urlRisk"></div>
+        <div class="flag-chips" id="urlFlags"></div>
+      </div>
+    </div>
+    <div class="probs-section">
+      <div class="probs-title">Class Probabilities</div>
+      <div id="probsContainer"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>FraudShield v3 · Run the server notebook in
+      <a href="https://colab.research.google.com" target="_blank">Google Colab</a>,
+      paste the endpoint above, then analyse any message.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+const SAMPLES = {
+  kyc: "Dear Customer, Your SBI account KYC verification is expiring today. As per RBI guidelines, failure to update KYC will result in account suspension. Please click the secure link below within 4 hours: https://sbi-kyc-secure-update.in/verify?uid=9823XXXX",
+  delivery: "Your FedEx international shipment FX-9921384-IN is held at Delhi customs and requires a duty payment of Rs.1,340. Pay immediately at fedex-customs-clearance.in/pay to avoid return to sender.",
+  investment: "Join our exclusive Telegram group for stock tips. Members earning 25-40% monthly returns guaranteed. Limited slots. WhatsApp +91-XXXXXXXXXX to join premium trading signals group.",
+  benign: "Your Amazon order #402-1234567 has been delivered to your doorstep. Thank you for shopping with us!"
+};
+
+let connected = false;
+
+function getEndpoint() {
+  return document.getElementById('endpointInput').value.trim().replace(/\/$/, '');
+}
+
+async function testConnection() {
+  const ep = getEndpoint();
+  if (!ep) { setStatus('err', 'Please enter an endpoint URL'); return; }
+  setStatus('', 'Connecting…');
+  try {
+    const r = await fetch(ep + '/health', { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      connected = true;
+      document.getElementById('analyzeBtn').disabled = false;
+      setStatus('ok', 'Connected — server is online ✓');
+    } else {
+      setStatus('err', `Server returned ${r.status}`);
+    }
+  } catch (e) {
+    setStatus('err', 'Could not reach server. Check the URL and try again.');
+  }
+}
+
+function setStatus(type, msg) {
+  document.getElementById('statusDot').className = 'status-dot' + (type ? ' ' + type : '');
+  document.getElementById('statusText').textContent = msg;
+}
+
+function loadSample(key) {
+  document.getElementById('msgInput').value = SAMPLES[key];
+}
+
+async function analyse() {
+  const msg = document.getElementById('msgInput').value.trim();
+  if (!msg) { showError('Please enter a message.'); return; }
+  if (!connected) { showError('Connect to the server first.'); return; }
+
+  hideAll();
+  document.getElementById('spinner').style.display = 'block';
+
+  try {
+    const res = await fetch(getEndpoint() + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+      signal: AbortSignal.timeout(20000)
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    document.getElementById('spinner').style.display = 'none';
+    renderResult(data);
+  } catch (e) {
+    document.getElementById('spinner').style.display = 'none';
+    showError('Request failed: ' + e.message);
+  }
+}
+
+function renderResult(d) {
+  const ICONS = {
+    SCAM: '🚨',
+    SUSPICIOUS_HIGH_RISK: '⚠️',
+    SUSPICIOUS: '🟡',
+    LIKELY_SAFE: '✅',
+    SAFE: '✅'
+  };
+
+  const DESCS = {
+    SCAM: 'High-confidence fraud detected',
+    SUSPICIOUS_HIGH_RISK: 'High-risk — likely a scam',
+    SUSPICIOUS: 'Treat with caution',
+    LIKELY_SAFE: 'Appears legitimate',
+    SAFE: 'Legitimate message'
+  };
+
+  const v = d.verdict || 'SUSPICIOUS';
+
+  const banner = document.getElementById('verdictBanner');
+  banner.className = 'verdict-banner verdict-' + v;
+  document.getElementById('verdictIcon').textContent = ICONS[v] || '❓';
+  document.getElementById('verdictLabel').textContent = v.replace(/_/g, ' ');
+  document.getElementById('verdictLabel').className = 'verdict-label verdict-color-' + v;
+  document.getElementById('verdictSub').textContent = DESCS[v] || '';
+
+  document.getElementById('attackType').textContent = (d.attack_type || '—').replace(/_/g, ' ');
+  const conf = Math.round((d.confidence || 0) * 100);
+  document.getElementById('confValue').textContent = conf + '%';
+  setTimeout(() => {
+    document.getElementById('confBar').style.width = conf + '%';
+  }, 50);
+
+  document.getElementById('signalUsed').textContent = (d.signal_used || '—').replace(/_/g, ' ');
+  document.getElementById('ruleTriggered').textContent = d.rule_triggered || 'none';
+
+  // URL analysis
+  const ua = d.url_analysis || {};
+  const urlBox = document.getElementById('urlBox');
+  if (ua.has_url) {
+    document.getElementById('urlRisk').textContent =
+      `Risk score: ${Math.round((ua.risk_score || 0) * 100)}%  ·  URLs: ${(ua.urls || []).join(', ')}`;
+    const chips = document.getElementById('urlFlags');
+    chips.innerHTML = '';
+    (ua.flags || []).forEach(f => {
+      const el = document.createElement('span');
+      el.className = 'flag-chip';
+      el.textContent = f;
+      chips.appendChild(el);
+    });
+    urlBox.style.display = 'block';
+  } else {
+    urlBox.style.display = 'none';
+  }
+
+  // class probabilities
+  const container = document.getElementById('probsContainer');
+  container.innerHTML = '';
+  const probs = d.class_probabilities || {};
+  const sorted = Object.entries(probs).sort((a,b) => b[1] - a[1]);
+  const topClass = sorted[0]?.[0];
+  sorted.forEach(([cls, pct]) => {
+    const pct100 = Math.round(pct * 100);
+    const isTop  = cls === topClass;
+    container.innerHTML += `
+      <div class="prob-row">
+        <div class="prob-name">${cls.replace(/_/g, '_')}</div>
+        <div class="prob-track">
+          <div class="prob-fill ${isTop ? 'highlight' : ''}" style="width:${pct100}%"></div>
+        </div>
+        <div class="prob-pct">${pct100}%</div>
+      </div>`;
+  });
+
+  document.getElementById('resultCard').style.display = 'block';
+}
+
+function hideAll() {
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('errorBox').style.display  = 'none';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+// enable analyse button when text is entered
+document.getElementById('msgInput').addEventListener('input', function() {
+  document.getElementById('analyzeBtn').disabled = !this.value.trim() || !connected;
+});
+</script>
+</body>
+</html>
